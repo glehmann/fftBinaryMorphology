@@ -69,9 +69,10 @@ ENDIF(BUILD_WRAPPERS)
 
 IF(BUILD_TESTING)
 
-SET(CurrentExe "check")
-ADD_EXECUTABLE(${CurrentExe} ${CurrentExe}.cxx)
-TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
+FOREACH(CurrentExe "check")
+  ADD_EXECUTABLE(${CurrentExe} ${CurrentExe}.cxx)
+  TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
+ENDFOREACH(CurrentExe)
 
 ENDIF(BUILD_TESTING)
 
