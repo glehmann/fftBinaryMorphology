@@ -95,14 +95,13 @@ FFTBinaryDilateImageFilter< TInputImage, TOutputImage, TKernel >
 {
   // restore the background
   ImageRegionConstIterator< InputImageType > inIt =
-  ImageRegionConstIterator< InputImageType >( this->GetInput(),
-                                            this->GetOutput()->GetRequestedRegion() );
+  ImageRegionConstIterator< InputImageType >( this->GetInput(), outputRegionForThread );
   // iterator on output image
   ImageRegionIterator< OutputImageType > outIt =
-  ImageRegionIterator< OutputImageType >( this->GetOutput(),
-                                        this->GetOutput()->GetRequestedRegion() );
+  ImageRegionIterator< OutputImageType >( this->GetOutput(), outputRegionForThread );
   outIt.GoToBegin();
   inIt.GoToBegin();
+  ProgressReporter progress(this, threadId, outputRegionForThread.GetNumberOfPixels(), 20, 0.9, 0.1);
   while ( !outIt.IsAtEnd() )
     {
     if ( outIt.Get() != m_ForegroundValue && inIt.Get() != m_ForegroundValue )
@@ -111,15 +110,8 @@ FFTBinaryDilateImageFilter< TInputImage, TOutputImage, TKernel >
       }
     ++outIt;
     ++inIt;
+    progress.CompletedPixel();
     }
-}
-
-template< class TInputImage, class TOutputImage, class TKernel >
-void
-FFTBinaryDilateImageFilter< TInputImage, TOutputImage, TKernel >
-::AfterThreadedGenerateData()
-{
-  this->UpdateProgress(1.0);
 }
 
 template< class TInputImage, class TOutputImage, class TKernel >

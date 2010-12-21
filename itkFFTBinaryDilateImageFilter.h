@@ -88,7 +88,6 @@ protected:
   void  BeforeThreadedGenerateData();
   void ThreadedGenerateData(const OutputImageRegionType & outputRegionForThread,
                             int threadId);
-  void  AfterThreadedGenerateData();
 
 private:
   FFTBinaryDilateImageFilter(const Self &); //purposely not
