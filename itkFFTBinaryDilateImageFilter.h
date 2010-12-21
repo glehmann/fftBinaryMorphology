@@ -24,18 +24,9 @@ namespace itk
 {
 /**
  * \class FFTBinaryDilateImageFilter
- * \brief binary morphological closing of an image.
+ * \brief FFT based binary dilation
  *
- * This filter removes small (i.e., smaller than the structuring
- * element) holes and tube like structures in the interior or at the
- * boundaries of the image. The morphological closing of an image
- * "f" is defined as:
- * Closing(f) = Erosion(Dilation(f)).
- *
- * The structuring element is assumed to be composed of binary
- * values (zero or one). Only elements of the structuring element
- * having values > 0 are candidates for affecting the center pixel.
- *
+ * This filter is a lot more efficient when ITK is built with FFTW support.
  *
  * \author Gaetan Lehmann. Biologie du Developpement et de la Reproduction, INRA de Jouy-en-Josas, France.
  *
@@ -83,14 +74,21 @@ public:
    * maximum value of InputPixelType. */
   itkGetConstMacro(ForegroundValue, InputPixelType);
 
+  /** Set the value in eroded part of the image. Defaults to zero */
+  itkSetMacro(BackgroundValue, InputPixelType);
+
+  /** Set the value in eroded part of the image. Defaults to zero */
+  itkGetConstMacro(BackgroundValue, InputPixelType);
+  
 protected:
   FFTBinaryDilateImageFilter();
   ~FFTBinaryDilateImageFilter() {}
   void PrintSelf(std::ostream & os, Indent indent) const;
 
-  /** Single-threaded version of GenerateData.  This filter delegates
-   * to GrayscaleDilateImageFilter GrayscaleErodeImageFilter. */
-  void  GenerateData();
+  void  BeforeThreadedGenerateData();
+  void ThreadedGenerateData(const OutputImageRegionType & outputRegionForThread,
+                            int threadId);
+  void  AfterThreadedGenerateData();
 
 private:
   FFTBinaryDilateImageFilter(const Self &); //purposely not
@@ -99,6 +97,7 @@ private:
                                                        // implemented
 
   InputPixelType m_ForegroundValue;
+  InputPixelType m_BackgroundValue;
 
 }; // end of class
 } // end namespace itk

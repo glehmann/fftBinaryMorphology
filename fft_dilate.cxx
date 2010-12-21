@@ -4,7 +4,8 @@
 
 #include "itkImage.h"
 #include "itkFlatStructuringElement.h"
-#include "itkBinaryDilateImageFilter.h"
+#include "itkFFTBinaryDilateImageFilter.h"
+#include "itkFFTWGlobalConfiguration.h"
 
 int main(int argc, char * argv[])
 {
@@ -17,6 +18,10 @@ int main(int argc, char * argv[])
     // std::cerr << "  : " << std::endl;
     exit(1);
     }
+
+  std::cout << itk::FFTWGlobalConfiguration::GetPlanRigorName( itk::FFTWGlobalConfiguration::GetPlanRigor() ) << std::endl;
+  std::cout << itk::FFTWGlobalConfiguration::GetReadWisdomCache() << std::endl;
+  std::cout << itk::FFTWGlobalConfiguration::GetWriteWisdomCache() << std::endl;
 
   const int dim = 2;
   
@@ -32,7 +37,7 @@ int main(int argc, char * argv[])
   rad.Fill(50);
   KernelType ball = KernelType::Ball( rad );
   
-  typedef itk::BinaryDilateImageFilter< IType, IType, KernelType > FilterType;
+  typedef itk::FFTBinaryDilateImageFilter< IType, IType, KernelType > FilterType;
   FilterType::Pointer filter = FilterType::New();
   filter->SetInput( reader->GetOutput() );
   filter->SetKernel( ball );
