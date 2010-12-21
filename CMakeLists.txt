@@ -1,5 +1,6 @@
 #Change PROJECT_NAME to the name of your project
-PROJECT()
+PROJECT(fftBinaryMorphology)
+INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/../fftconv")
 
 # required to avoid warnings while running cmake
 CMAKE_MINIMUM_REQUIRED(VERSION 2.4.2)
@@ -39,6 +40,7 @@ SET(Libraries
   ITKCommon
   ITKBasicFilters
   ITKIO
+  ITKAlgorithms
 )
 
 
@@ -69,7 +71,7 @@ ENDIF(BUILD_WRAPPERS)
 
 IF(BUILD_TESTING)
 
-FOREACH(CurrentExe "check")
+FOREACH(CurrentExe "dilate")
   ADD_EXECUTABLE(${CurrentExe} ${CurrentExe}.cxx)
   TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 ENDFOREACH(CurrentExe)
