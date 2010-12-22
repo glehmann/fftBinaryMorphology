@@ -9,16 +9,16 @@
 int main(int argc, char * argv[])
 {
 
-  if( argc != 3 )
+  if( argc != 6 )
     {
-    std::cerr << "usage: " << argv[0] << " intput output" << std::endl;
+    std::cerr << "usage: " << argv[0] << " intput output radius fg bg" << std::endl;
     std::cerr << " input: the input image" << std::endl;
     std::cerr << " output: the output image" << std::endl;
     // std::cerr << "  : " << std::endl;
     exit(1);
     }
 
-  const int dim = 2;
+  const int dim = 3;
   
   typedef unsigned char PType;
   typedef itk::Image< PType, dim > IType;
@@ -29,13 +29,15 @@ int main(int argc, char * argv[])
 
   typedef itk::FlatStructuringElement< dim > KernelType;
   KernelType::RadiusType rad;
-  rad.Fill(50);
+  rad.Fill( atoi(argv[3]) );
   KernelType ball = KernelType::Ball( rad );
   
   typedef itk::BinaryDilateImageFilter< IType, IType, KernelType > FilterType;
   FilterType::Pointer filter = FilterType::New();
   filter->SetInput( reader->GetOutput() );
   filter->SetKernel( ball );
+  filter->SetForegroundValue( atoi(argv[4]) );
+  filter->SetBackgroundValue( atoi(argv[5]) );
 
   itk::SimpleFilterWatcher watcher(filter, "filter");
 

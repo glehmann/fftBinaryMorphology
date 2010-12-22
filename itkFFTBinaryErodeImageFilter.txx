@@ -1,0 +1,133 @@
+/*=========================================================================
+ *
+ *  Copyright Insight Software Consortium
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0.txt
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ *=========================================================================*/
+#ifndef __itkFFTBinaryErodeImageFilter_txx
+#define __itkFFTBinaryErodeImageFilter_txx
+
+#include "itkBinaryThresholdImageFilter.h"
+#include "itkNeighborhoodConverter.h"
+#include "itkFFTConvolutionImageFilter.h"
+#include "itkProgressAccumulator.h"
+#include "itkProgressReporter.h"
+
+namespace itk
+{
+template< class TInputImage, class TOutputImage, class TKernel >
+FFTBinaryErodeImageFilter< TInputImage, TOutputImage, TKernel >
+::FFTBinaryErodeImageFilter()
+{
+  m_ForegroundValue = NumericTraits< InputPixelType >::max();
+  m_BackgroundValue = NumericTraits< InputPixelType >::Zero;
+}
+
+template< class TInputImage, class TOutputImage, class TKernel >
+void
+FFTBinaryErodeImageFilter< TInputImage, TOutputImage, TKernel >
+::BeforeThreadedGenerateData()
+{
+  // Allocate the outputs
+  this->AllocateOutputs();
+
+  typedef Image< unsigned char, ImageDimension > InternalImageType;
+  typedef Image< float, ImageDimension >         RealInternalImageType;
+  
+  ProgressAccumulator::Pointer progress = ProgressAccumulator::New();
+  progress->SetMiniPipelineFilter(this);
+
+  // input should be 0 or 1 only
+  typedef BinaryThresholdImageFilter< InputImageType, InternalImageType > InputThresholdType;
+  typename InputThresholdType::Pointer ith = InputThresholdType::New();
+  ith->SetInput( this->GetInput() );
+  ith->SetLowerThreshold( m_ForegroundValue );
+  ith->SetUpperThreshold( m_ForegroundValue );
+  ith->SetInsideValue( 0 );
+  ith->SetOutsideValue( 1 );
+  
+  typedef NeighborhoodConverter< KernelType, InternalImageType > NeighborhoodConverterType;
+  typename InternalImageType::Pointer kernel = NeighborhoodConverterType::GetImage( this->GetKernel() );
+  
+  typedef FFTConvolutionImageFilter< InternalImageType, InternalImageType, RealInternalImageType >  ConvolutionType;
+  typename ConvolutionType::Pointer conv = ConvolutionType::New();
+  conv->SetInput( ith->GetOutput() );
+  conv->SetKernelImage( kernel );
+  conv->SetNormalize( false );
+  conv->SetPadMethod( ConvolutionType::ZERO );
+  
+  typedef BinaryThresholdImageFilter< RealInternalImageType, OutputImageType > OutputThresholdType;
+  typename OutputThresholdType::Pointer oth = OutputThresholdType::New();
+  oth->SetInput( conv->GetOutput() );
+  oth->SetLowerThreshold( 0.5 );
+  oth->SetUpperThreshold( NumericTraits< float >::max() );
+  oth->SetInsideValue( m_BackgroundValue );
+  oth->SetOutsideValue( m_ForegroundValue );
+
+  /** set up the minipipeline */
+  progress->RegisterInternalFilter(ith, .3f);
+  progress->RegisterInternalFilter(conv, .3f);
+  progress->RegisterInternalFilter(oth, .3f);
+  
+  /** execute the minipipeline */
+  oth->GraftOutput( this->GetOutput() );
+  oth->Update();
+  this->GraftOutput( oth->GetOutput() );
+
+}
+
+template< class TInputImage, class TOutputImage, class TKernel >
+void
+FFTBinaryErodeImageFilter< TInputImage, TOutputImage, TKernel >
+::ThreadedGenerateData(const OutputImageRegionType & outputRegionForThread,
+                            int threadId)
+{
+  // restore the background
+  ImageRegionConstIterator< InputImageType > inIt =
+  ImageRegionConstIterator< InputImageType >( this->GetInput(),
+                                            this->GetOutput()->GetRequestedRegion() );
+  // iterator on output image
+  ImageRegionIterator< OutputImageType > outIt =
+  ImageRegionIterator< OutputImageType >( this->GetOutput(),
+                                        this->GetOutput()->GetRequestedRegion() );
+  outIt.GoToBegin();
+  inIt.GoToBegin();
+  ProgressReporter progress(this, threadId, outputRegionForThread.GetNumberOfPixels(), 20, 0.9, 0.1);
+  while ( !outIt.IsAtEnd() )
+    {
+    if ( outIt.Get() != m_ForegroundValue && inIt.Get() != m_ForegroundValue )
+      {
+      outIt.Set( static_cast< OutputPixelType >( inIt.Get() ) );
+      }
+    ++outIt;
+    ++inIt;
+    progress.CompletedPixel();
+    }
+}
+
+template< class TInputImage, class TOutputImage, class TKernel >
+void
+FFTBinaryErodeImageFilter< TInputImage, TOutputImage, TKernel >
+::PrintSelf(std::ostream & os, Indent indent) const
+{
+  Superclass::PrintSelf(os, indent);
+
+  os << indent << "ForegroundValue: "
+     << static_cast< typename NumericTraits< InputPixelType >::PrintType >( m_ForegroundValue ) << std::endl;
+  os << indent << "BackgroundValue: "
+     << static_cast< typename NumericTraits< InputPixelType >::PrintType >( m_BackgroundValue ) << std::endl;
+}
+
+} // end namespace itk
+#endif

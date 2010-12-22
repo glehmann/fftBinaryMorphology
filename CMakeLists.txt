@@ -71,7 +71,7 @@ ENDIF(BUILD_WRAPPERS)
 
 IF(BUILD_TESTING)
 
-FOREACH(CurrentExe dilate fft_dilate)
+FOREACH(CurrentExe dilate fft_dilate erode fft_erode)
   ADD_EXECUTABLE(${CurrentExe} ${CurrentExe}.cxx)
   TARGET_LINK_LIBRARIES(${CurrentExe} ${Libraries})
 ENDFOREACH(CurrentExe)
